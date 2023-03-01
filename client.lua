@@ -18,7 +18,7 @@ Citizen.CreateThread(function()
       if(pausemenu) then
         menu_status = false
       end
-      if IsControlJustPressed(1, 318) then
+      if IsControlJustPressed(1, 244) then
         if not menu_status then
           menu_status = true
           -- TriggerEvent('table', cars)
@@ -43,81 +43,49 @@ Citizen.CreateThread(function()
   end
 end)
 
-RegisterNetEvent('Dusty:SETVEHICLES')
-AddEventHandler('Dusty:SETVEHICLES', function(data)
-  cars = data
+RegisterNetEvent('Dusty:SETPEDS')
+AddEventHandler('Dusty:SETPEDS', function(data)
+  peds = data
   startLoop = true
 end)
 
 function open_menu()
-  if(cars) then
+  if(peds) then
     _MenuPool:Remove()
     _MenuPool = NativeUI.CreatePool()
     MainMenu = NativeUI.CreateMenu(Dusty.Options.Menu_Title, "Created by Dusty's Development - v1.0", "0")
-    --MainMenu = NativeUI.CreateMenu("Vehicle Menu", "Created by Dusty's Development - v1.0", "0")
     _MenuPool:Add(MainMenu)
     MainMenu:SetMenuWidthOffset(80)
-
-    for i, v in pairs(cars) do
+    for i, v in pairs(peds) do
       local k = Dusty.Names[i]
-      local menu = _MenuPool:AddSubMenu(MainMenu, k, k.. ' Vehicle Menu', true)
+      local menu = _MenuPool:AddSubMenu(MainMenu, k, k.. ' Ped Menu', true)
       MainMenu:AddItem(menu)
-      for i2, v2 in ipairs(cars[i]) do
-          local vehicle = NativeUI.CreateItem(v2.name, "Spawn the " .. v2.name)
-          menu:AddItem(vehicle)
-          vehicle.Activated = function(ParentMenu, SelectedItem)
-          spawnvec(v2.spawnCode, v2.name)
-        end
+      for i2, v2 in ipairs(peds[i]) do
+          local ped = NativeUI.CreateItem(v2.name, "Spawn the " .. v2.name)
+          menu:AddItem(ped)
+          ped.Activated = function(ParentMenu, SelectedItem)
+            spawnped(v2.spawnCode, v2.name)
+          end
       end
     end
   end
 end
 
-function spawnvec(modal, name)
-deleteOld()
-  local ped = GetPlayerPed(-1)
-	local player = PlayerId()
-	local vehicle = GetHashKey(modal)
-  RequestModel(vehicle)
-  Citizen.Wait(225)
-	if not HasModelLoaded(vehicle) then
-		notify("There was an ~r~error~w~ that occured whilst Loading the (" .. modal .. "). Contact Server Developer to fix the Config")
-  else 
-    local coords = GetOffsetFromEntityInWorldCoords(ped, 0, 5.0, 0)
-    local spawned_car = CreateVehicle(vehicle, coords, 64.55118,116.613,78.69622, true, false)
-    SetVehicleOnGroundProperly(spawned_car)
-    SetPedIntoVehicle(ped, spawned_car, - 1)
-    SetModelAsNoLongerNeeded(vehicle)
-    lastVec = spawned_car
-    notify("~g~Successfully~w~ Spawned the: ~b~" .. name .. "")
+function spawnped(model, name)
+  if IsModelInCdimage(model) then
+    while not HasModelLoaded(model) do
+      Wait(5)
+      RequestModel(model)
     end
-end 
-
-function deleteOld()
-if Dusty.Options.Delete_Last_Vehicle == "true" then
-  if lastVec then
-    DeleteEntity(lastVec)
-   end
-end
-  return
+    SetPlayerModel(PlayerId(), model)
+    notify('Successfully set your ped to '..name)
+  else
+    notify('Invalid ped!')
+  end
 end
 
 function notify(text)
   SetNotificationTextEntry("STRING")
 	AddTextComponentSubstringPlayerName(text)
 	DrawNotification(true, true)
-end
-
-RegisterNetEvent("Dusty:CarWipe")
-AddEventHandler("Dusty:CarWipe", function ()
-    for vehicle in EnumerateVehicles() do
-        if (not IsPedAPlayer(GetPedInVehicleSeat(vehicle, -1))) then 
-            SetVehicleHasBeenOwnedByPlayer(vehicle, false) 
-            SetEntityAsMissionEntity(vehicle, false, false) 
-            DeleteVehicle(vehicle)
-            if (DoesEntityExist(vehicle)) then 
-                DeleteVehicle(vehicle) 
-            end
-        end
-    end
-end)
+end 
